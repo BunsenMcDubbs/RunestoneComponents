@@ -150,6 +150,12 @@ TimedMC.prototype.hideFeedback = function () {
     }
 };
 
+TimedMC.prototype.showFeedback = function () {
+    for (var i = 0; i < this.feedBackEachArray.length; i++) {
+        $(this.feedBackEachArray[i]).show();
+    }
+};
+
 TimedMC.prototype.processTimedSubmission = function (logFlag) {
     // Disable input, then evaluate component
     for (var i = 0; i < this.optionArray.length; i++) {

@@ -42,16 +42,21 @@ def visit_timed_node(self, node):
         node.timed_options['nofeedback'] = 'data-no-feedback'
     else:
         node.timed_options['nofeedback'] = ''
-        
+
     if 'notimer' in node.timed_options:
         node.timed_options['notimer'] = 'data-no-timer'
     else:
         node.timed_options['notimer'] = ''
-        
+
     if 'fullwidth' in node.timed_options:
         node.timed_options['fullwidth'] = 'data-fullwidth'
     else:
         node.timed_options['fullwidth'] = ''
+
+    if 'allowretake' in node.timed_options:
+        node.timed_options['allowretake'] = 'data-allow-retake'
+    else:
+        node.timed_options['allowretake'] = ''
 
     res = TEMPLATE_START % node.timed_options
     self.body.append(res)
@@ -64,7 +69,7 @@ def depart_timed_node(self,node):
 
 #Templates to be formatted by node options
 TEMPLATE_START = '''
-    <ul data-component="timedAssessment" %(timelimit)s id="%(divid)s" %(noresult)s %(nofeedback)s %(notimer)s %(fullwidth)s>
+    <ul data-component="timedAssessment" %(timelimit)s id="%(divid)s" %(noresult)s %(nofeedback)s %(notimer)s %(fullwidth)s %(allowretake)s>
     '''
 
 TEMPLATE_END = '''</ul>
@@ -77,6 +82,7 @@ class TimedDirective(Directive):
     :nofeedback: Boolean, doesn't display feedback
     :notimer: Boolean, doesn't show timer
     :fullwidth: Boolean, allows the items in the timed assessment to take the full width of the screen...
+    :allowretake: Boolean, allows students to retake the exam
 
     """
     required_arguments = 1
@@ -87,7 +93,8 @@ class TimedDirective(Directive):
                     "noresult":directives.flag,
                     "nofeedback":directives.flag,
                     "fullwidth":directives.flag,
-                    "notimer":directives.flag}
+                    "notimer":directives.flag,
+                    "allowretake":directives.flag}
 
     def run(self):
         """
@@ -100,6 +107,7 @@ class TimedDirective(Directive):
                 :nofeedback: Boolean, doesn't display feedback
                 :notimer: Boolean, doesn't show timer
                 :fullwidth: Boolean, allows the items in the timed assessment to take the full width of the screen
+                :allowretake: Boolean, allows users to retake a test
             ...
             """
         self.assert_has_content() # make sure timed has something in it

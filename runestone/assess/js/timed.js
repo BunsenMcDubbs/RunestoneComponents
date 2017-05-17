@@ -39,6 +39,7 @@ Timed.prototype.init = function (opts) {
         this.limitedTime = true;
     }
     this.showFeedback = true;
+    this.feedbackIsVisible = false;
     if ($(this.origElem).is("[data-no-feedback]")) {
         this.showFeedback = false;
     }
@@ -57,6 +58,10 @@ Timed.prototype.init = function (opts) {
     this.fullwidth = false;
     if ($(this.origElem).is("[data-fullwidth]")) {
         this.fullwidth = true;
+    }
+    this.allowRetake = false;
+    if ($(this.origElem).is("[data-allow-retake]")) {
+        this.allowRetake = true;
     }
 
     this.running = 0;
@@ -158,13 +163,37 @@ Timed.prototype.renderControlButtons = function () {
     $(this.pauseBtn).attr({
         "class": "btn btn-default",
         "id": "pause",
-        "disabled":"true"
+        "disabled":true
     });
     this.pauseBtn.textContent = "Pause";
     this.pauseBtn.addEventListener("click", function () {
         this.pauseAssessment();
     }.bind(this), false);
+
+    this.displayResultsBtn = document.createElement("btn");
+    $(this.displayResultsBtn).attr({
+        "class": "btn btn-warning",
+        "id": "display-results"
+    });
+    this.displayResultsBtn.textContent = "Display Results";
+    this.displayResultsBtn.addEventListener("click", function() {
+        if (this.feedbackIsVisible) {
+            this.hideTimedFeedback();
+            this.displayResultsBtn.textContent = "Display Results";
+        } else {
+            this.showTimedFeedback();
+            this.displayResultsBtn.textContent = "Hide Results";
+        }
+        this.feedbackIsVisible = !this.feedbackIsVisible;
+    }.bind(this), false);
+    if (this.taken && this.allowRetake) {
+        $(this.displayResultsBtn).show();
+    } else {
+        $(this.displayResultsBtn).hide();
+    }
+
     this.controlDiv.appendChild(this.startBtn);
+    this.controlDiv.appendChild(this.displayResultsBtn);
     this.controlDiv.appendChild(this.pauseBtn);
     this.assessDiv.appendChild(this.wrapperDiv);
     this.assessDiv.appendChild(this.controlDiv);
@@ -386,41 +415,47 @@ Timed.prototype.renderTimedQuestion = function () {
 =================================*/
 
 Timed.prototype.handlePrevAssessment = function () {
-		$(this.startBtn).hide();
-        $(this.pauseBtn).attr("disabled", true);
-        $(this.finishButton).attr("disabled", true);
-        this.running = 0;
-        this.done = 1;
-        if (this.showResults) {
-           $(this.timedDiv).show();
-           this.submitTimedProblems(false); // do not log these results
-        } else {
-           $(this.pauseBtn).hide();
-           $(this.timerContainer).hide();
-        }
+    if (this.allowRetake) {
+        this.startBtn.innerHTML = "Retake";
+        $(this.displayResultsBtn).show();
+    } else {
+        $(this.startBtn).hide();
+    }
+    $(this.pauseBtn).attr("disabled", true);
+    $(this.finishButton).attr("disabled", true);
+    this.running = 0;
+    this.done = 1;
+    if (this.showResults) {
+        $(this.timedDiv).show();
+        this.submitTimedProblems(false); // do not log these results
+    } else {
+        $(this.pauseBtn).hide();
+        $(this.timerContainer).hide();
+    }
 };
 
 Timed.prototype.startAssessment = function () {
-    if (!this.taken) {
-        $("#relations-next").hide(); // hide the next page button for now
-        $("#relations-prev").hide(); // hide the previous button for now
-        $(this.startBtn).hide();
-        $(this.pauseBtn).attr("disabled", false);
-        if (this.running === 0 && this.paused === 0) {
-            this.running = 1;
-            $(this.timedDiv).show();
-            this.increment();
-            this.logBookEvent({"event": "timedExam", "act": "start", "div_id": this.divid});
-            var timeStamp = new Date();
-            var storageObj = {"answer": [0,0,this.renderedQuestionArray.length,0], "timestamp": timeStamp};
-            localStorage.setItem(eBookConfig.email + ":" + this.divid + "-given", JSON.stringify(storageObj));
-        }
-        $(window).on('beforeunload', function(){
-            // this actual value gets ignored by newer browsers
-            return 'Are you sure you want to leave?';
-        });
-    } else {
-       this.handlePrevAssessment();
+    // TODO if not this.taken or this.allowRetake
+    $("#relations-next").hide(); // hide the next page button for now
+    $("#relations-prev").hide(); // hide the previous button for now
+    $(this.startBtn).hide();
+    $(this.pauseBtn).attr("disabled", false);
+    if (this.running === 0 && this.paused === 0) {
+        this.running = 1;
+        $(this.timedDiv).show();
+        this.increment();
+        this.logBookEvent({"event": "timedExam", "act": "start", "div_id": this.divid});
+        var timeStamp = new Date();
+        var storageObj = {"answer": [0,0,this.renderedQuestionArray.length,0], "timestamp": timeStamp};
+        localStorage.setItem(eBookConfig.email + ":" + this.divid + "-given", JSON.stringify(storageObj));
+    }
+    $(window).on('beforeunload', function(){
+        // this actual value gets ignored by newer browsers
+        return 'Are you sure you want to leave?';
+    });
+
+    if (this.taken) {
+        this.handlePrevAssessment();
     }
 };
 
@@ -581,8 +616,11 @@ Timed.prototype.submitTimedProblems = function (logFlag) {
         var currentQuestion = this.renderedQuestionArray[i].question;
         currentQuestion.processTimedSubmission(logFlag);
     }
-    if (!this.showFeedback) {
+    if (!this.showFeedback || !this.feedbackIsVisible) {
         this.hideTimedFeedback();
+        this.feedbackIsVisible = false;
+    } else {
+        this.feedbackIsVisible = true;
     }
 };
 
@@ -590,6 +628,13 @@ Timed.prototype.hideTimedFeedback = function () {
     for (var i = 0; i < this.renderedQuestionArray.length; i++) {
         var currentQuestion = this.renderedQuestionArray[i].question;
         currentQuestion.hideFeedback();
+    }
+};
+
+Timed.prototype.showTimedFeedback = function () {
+    for (var i = 0; i < this.renderedQuestionArray.length; i++) {
+        var currentQuestion = this.renderedQuestionArray[i].question;
+        currentQuestion.showFeedback();
     }
 };
 
