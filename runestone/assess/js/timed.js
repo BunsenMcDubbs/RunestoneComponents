@@ -170,30 +170,30 @@ Timed.prototype.renderControlButtons = function () {
         this.pauseAssessment();
     }.bind(this), false);
 
-    this.displayResultsBtn = document.createElement("btn");
-    $(this.displayResultsBtn).attr({
+    this.displayFeedbackBtn = document.createElement("btn");
+    $(this.displayFeedbackBtn).attr({
         "class": "btn btn-warning",
         "id": "display-results"
     });
-    this.displayResultsBtn.textContent = "Display Results";
-    this.displayResultsBtn.addEventListener("click", function() {
+    this.displayFeedbackBtn.textContent = "Display Feedback";
+    this.displayFeedbackBtn.addEventListener("click", function() {
         if (this.feedbackIsVisible) {
             this.hideTimedFeedback();
-            this.displayResultsBtn.textContent = "Display Results";
+            this.displayFeedbackBtn.textContent = "Display Feedback";
         } else {
             this.showTimedFeedback();
-            this.displayResultsBtn.textContent = "Hide Results";
+            this.displayFeedbackBtn.textContent = "Hide Feedback";
         }
         this.feedbackIsVisible = !this.feedbackIsVisible;
     }.bind(this), false);
     if (this.taken && this.allowRetake) {
-        $(this.displayResultsBtn).show();
+        $(this.displayFeedbackBtn).show();
     } else {
-        $(this.displayResultsBtn).hide();
+        $(this.displayFeedbackBtn).hide();
     }
 
     this.controlDiv.appendChild(this.startBtn);
-    this.controlDiv.appendChild(this.displayResultsBtn);
+    this.controlDiv.appendChild(this.displayFeedbackBtn);
     this.controlDiv.appendChild(this.pauseBtn);
     this.assessDiv.appendChild(this.wrapperDiv);
     this.assessDiv.appendChild(this.controlDiv);
@@ -417,7 +417,7 @@ Timed.prototype.renderTimedQuestion = function () {
 Timed.prototype.handlePrevAssessment = function () {
     if (this.allowRetake) {
         this.startBtn.innerHTML = "Retake";
-        $(this.displayResultsBtn).show();
+        $(this.displayFeedbackBtn).show();
     } else {
         $(this.startBtn).hide();
     }
@@ -708,6 +708,7 @@ Timed.prototype.shouldUseServer = function (data) {
                 return false;   // In this case, because local storage has more info, we want to use that if it's consistent
             }
         }
+        // BUG ? This will often trigger a parse error when storageObj is a string and not an object
         var storageDate = new Date(JSON.parse(storageObj[1]).timestamp);
     } catch (err) {
         // error while parsing; likely due to bad value stored in storage
