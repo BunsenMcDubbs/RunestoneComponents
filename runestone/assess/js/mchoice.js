@@ -288,10 +288,17 @@ MultipleChoice.prototype.restoreAnswers = function (data) {
         var index = answers[a];
         for (var b = 0; b < this.optionArray.length; b++) {
             if (this.optionArray[b].input.value == index) {
-                $(this.optionArray[b].input).attr("checked", "true");
+                $(this.optionArray[b].input).attr("checked", true);
+            } else {
+                $(this.optionArray[b].input).attr("checked", false);
             }
         }
     }
+};
+
+MultipleChoice.prototype.clearAnswers = function () {
+    // Use the "restoreAnswers" function to unselect all options
+    this.restoreAnswers({answer: null});
 };
 
 MultipleChoice.prototype.checkLocalStorage = function () {

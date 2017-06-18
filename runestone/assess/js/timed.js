@@ -341,7 +341,7 @@ Timed.prototype.createRenderedQuestionArray = function () {
     // Also adds them to this.renderedQuestionArray
     for (var i = 0; i < this.newChildren.length; i++) {
         var tmpChild = this.newChildren[i];
-        opts = {'orig':tmpChild, 'useRunestoneServices':eBookConfig.useRunestoneServices}
+        opts = {'orig':tmpChild, 'useRunestoneServices':eBookConfig.useRunestoneServices};
         if ($(tmpChild).is("[data-component=multiplechoice]")) {
             this.renderedQuestionArray.push({"question": new TimedMC(opts)});
         } else if ($(tmpChild).is("[data-component=fillintheblank]")) {
@@ -435,11 +435,14 @@ Timed.prototype.handlePrevAssessment = function () {
 };
 
 Timed.prototype.startAssessment = function () {
-    // TODO if not this.taken or this.allowRetake
     $("#relations-next").hide(); // hide the next page button for now
     $("#relations-prev").hide(); // hide the previous button for now
+
     $(this.startBtn).hide();
+    $(this.displayFeedbackBtn).hide();
     $(this.pauseBtn).attr("disabled", false);
+    $(this.finishButton).attr("disabled", false);
+    this.done = 0;
     if (this.running === 0 && this.paused === 0) {
         this.running = 1;
         $(this.timedDiv).show();
@@ -448,13 +451,23 @@ Timed.prototype.startAssessment = function () {
         var timeStamp = new Date();
         var storageObj = {"answer": [0,0,this.renderedQuestionArray.length,0], "timestamp": timeStamp};
         localStorage.setItem(eBookConfig.email + ":" + this.divid + "-given", JSON.stringify(storageObj));
+
+        // if there are any previous test answers, remove them
+        for (let i = 0; i < this.renderedQuestionArray.length; i++) {
+            // TODO implement this for other question types?
+            try {
+                this.renderedQuestionArray[i].question.clearAnswers();
+            } catch (e) {
+                console.error(e);
+            }
+        }
     }
     $(window).on('beforeunload', function(){
         // this actual value gets ignored by newer browsers
         return 'Are you sure you want to leave?';
     });
 
-    if (this.taken) {
+    if (this.taken && !this.allowRetake) {
         this.handlePrevAssessment();
     }
 };
@@ -709,6 +722,7 @@ Timed.prototype.shouldUseServer = function (data) {
             }
         }
         // BUG ? This will often trigger a parse error when storageObj is a string and not an object
+        // This "bug"/parse fail allows the retake feature to work, otherwise answers would be restored
         var storageDate = new Date(JSON.parse(storageObj[1]).timestamp);
     } catch (err) {
         // error while parsing; likely due to bad value stored in storage
